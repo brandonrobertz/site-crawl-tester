@@ -41,14 +41,6 @@ function popRand(array) {
   return array.splice(randomIndex, 1)[0];
 }
 
-// // Type into search box.
-// await page.type('.devsite-search-field', 'automate beyond recorder');
-
-// // Wait and click on first result.
-// const searchResultSelector = '.devsite-result-item-link';
-// await page.waitForSelector(searchResultSelector);
-// await page.click(searchResultSelector);
-
 const visitedLinks = new Set();
 let queuedLinks = [];
 let n = 0;
