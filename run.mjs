@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer'; // or import puppeteer from 'puppeteer-core';
 
 // const STARTURL = 'http://localhost:3000/';
-const STARTURL = process.argv[-1];
+const STARTURL = process.argv[process.argv.length - 1];
 
 if (!STARTURL.startsWith("http")) {
   console.error("USAGE: run.mjs BASEURL");
