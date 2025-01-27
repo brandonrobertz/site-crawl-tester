@@ -8,8 +8,12 @@ if (!STARTURL.startsWith("http")) {
   process.exit(1);
 }
 
+console.log("STARTURL", STARTURL);
+// TODO: Get this from STARTURL
+const FILTERURL = "https://projects.propublica.org/private-school-demographics"; // "https://stg-projects-cf.propublica.org/";
+
 // Launch the browser and open a new blank page
-const browser = await puppeteer.launch();
+const browser = await puppeteer.launch({headless: false});
 const page = await browser.newPage();
 
 // Navigate the page to a URL.
@@ -22,17 +26,17 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-page.on('response', async response => {
+page.on('response', async (response) => {
   const url = response.url();
-  if (!url.startsWith(STARTURL)) return;
-  if (!response.ok() && response.status() !== 304) {
+  if (url.indexOf("/assets") > -1 || url.indexOf("/static") > -1) return;
+  if (!url.startsWith(FILTERURL)) return;
+  console.log(response.status(), response.url());
+  if ([500, 501, 502, 503, 504].indexOf(response.status()) >= 0) {
     const text = await response.text();
     console.error("========================= ERROR")
     console.error(response.status(), url);
     console.error("Response:\n", text, "-------------------------");
     process.exit(255);
-  } else if (url.indexOf("assets") === -1) {
-    console.log("\t", response.status(), url);
   }
 });
 
@@ -51,13 +55,13 @@ while (true) {
     return anchors.map(anchor => ({
       href: anchor.href,
       text: anchor.textContent
-    }))
+    })).filter(x => x.href);
   });
 
   const currentLinks = new Set(queuedLinks.map(l => l.href));
 
   pageLinks.filter(l => {
-    return l.href.startsWith(STARTURL);
+    return l.href.startsWith(FILTERURL) || l.href.startsWith("/");
   }).filter((l) => {
     return !visitedLinks.has(l.href);
   }).forEach(l => {
@@ -68,18 +72,19 @@ while (true) {
   });
 
   let link;
+  let sgn;
   if (++n%3 == 0) {
-    console.log("Popping random");
     link = popRand(queuedLinks);
+    sgn = "~";
   } else if (n%2 == 0) {
-    console.log("Popping last");
     link = queuedLinks.pop();
+    sgn = "-";
   } else {
-    console.log("Popping first");
     link = queuedLinks.shift();
+    sgn = "+";
   }
   const url = link.href;
-  console.log(url);
+  console.log(" ", sgn, url);
   visitedLinks.add(url);
   await page.goto(url);
 }
